@@ -1,5 +1,5 @@
 {
-  "name": "financia",
+  "name": "upperview",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -22,7 +22,7 @@
     "decimal.js": "^10.4.3",
     "lucide-react": "^0.441.0",
     "next": "15.0.0",
-    "next-auth": "^5.0.0",
+    "next-auth": "^4.24.0",
     "postcss": "^8.4.35",
     "react": "18.3.1",
     "react-dom": "18.3.1",
