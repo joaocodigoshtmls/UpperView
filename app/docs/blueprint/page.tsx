@@ -3,7 +3,7 @@ export default function Blueprint() {
     <article className="prose prose-zinc max-w-none">
       <h1>Blueprint do MVP</h1>
       <p>
-        Este documento descreve as telas e módulos planejados para a primeira versão do Financia.
+        Este documento descreve as telas e módulos planejados para a primeira versão do UpperView.
       </p>
       <h2>Rotas</h2>
       <ul>
