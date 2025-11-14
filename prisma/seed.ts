@@ -1,16 +1,23 @@
 import { PrismaClient, AccountType, TransactionType, Currency } from '@prisma/client'
 import { startOfMonth, endOfMonth } from 'date-fns'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
-  // Create demo user
+  // Create demo user with password "Demo123!"
+  const passwordHash = await bcrypt.hash('Demo123!', 10)
   const user = await prisma.user.upsert({
     where: { email: 'demo@local' },
     update: {},
-    create: { email: 'demo@local', name: 'Demo User' },
+    create: { 
+      email: 'demo@local', 
+      name: 'Demo User',
+      passwordHash,
+    },
   })
   console.log('✅ User created/found:', user.email)
+  console.log('   Demo credentials: demo@local / Demo123!')
 
   // Create institutions
   const institutions = [
