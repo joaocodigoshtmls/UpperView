@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { resetPassword } from "../actions";
@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -148,5 +148,19 @@ export default function ResetPasswordPage() {
         </Link>
       </AuthCardFooter>
     </AuthCard>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <AuthCard>
+        <AuthCardHeader>
+          <AuthCardTitle>Carregando...</AuthCardTitle>
+        </AuthCardHeader>
+      </AuthCard>
+    }>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
