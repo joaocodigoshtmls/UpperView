@@ -1,4 +1,4 @@
-# Financia (MVP — Etapas 1 a 3)
+# UpperView (MVP — Etapas 1 a 3)
 
 Stack: **Next.js (App Router) + Tailwind + Prisma + PostgreSQL (Neon)**
 
