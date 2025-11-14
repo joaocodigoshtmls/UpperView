@@ -3,7 +3,7 @@ import { getUserId } from '@/lib/user';
 import { startOfMonth, endOfMonth } from '@/lib/date';
 import { formatBRL } from '@/lib/format';
 import { TransactionType } from '@prisma/client';
-import ExpenseChart from './expense-chart';
+import ExpenseChartWrapper from './expense-chart-wrapper';
 
 export const revalidate = 0;
 
@@ -141,7 +141,7 @@ export default async function DashboardPage() {
         {data.topCategories.length === 0 ? (
           <p className="text-slate-500">Nenhuma despesa registrada neste mês.</p>
         ) : (
-          <ExpenseChart data={data.topCategories} />
+          <ExpenseChartWrapper data={data.topCategories} />
         )}
       </div>
     </div>

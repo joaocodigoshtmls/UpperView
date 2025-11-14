@@ -8,12 +8,7 @@ import TransactionDialog from './transaction-dialog';
 
 export const revalidate = 0;
 
-interface SearchParams {
-  type?: string;
-  search?: string;
-}
-
-async function getTransactions(userId: string, searchParams: SearchParams) {
+async function getTransactions(userId: string, searchParams: { type?: string; search?: string }) {
   const whereClause: any = { userId };
 
   if (searchParams.type && searchParams.type !== 'all') {
@@ -45,10 +40,11 @@ async function getTransactions(userId: string, searchParams: SearchParams) {
 export default async function TransactionsPage({
   searchParams,
 }: {
-  searchParams: SearchParams;
+  searchParams: Promise<{ type?: string; search?: string }>;
 }) {
+  const params = await searchParams;
   const userId = await getUserId();
-  const transactions = await getTransactions(userId, searchParams);
+  const transactions = await getTransactions(userId, params);
 
   const accounts = await prisma.financialAccount.findMany({
     where: { userId, archived: false },
@@ -77,7 +73,7 @@ export default async function TransactionsPage({
               id="search"
               name="search"
               placeholder="Buscar por descrição..."
-              defaultValue={searchParams.search}
+              defaultValue={params.search}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -86,7 +82,7 @@ export default async function TransactionsPage({
             <select
               id="type"
               name="type"
-              defaultValue={searchParams.type || 'all'}
+              defaultValue={params.type || 'all'}
               className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">Todos os tipos</option>
