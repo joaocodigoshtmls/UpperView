@@ -1,11 +1,56 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { auth } from "@/auth";
+import { logout } from "@/app/auth/actions";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "UpperView",
   description: "Controle financeiro pessoal com visão de caixa, metas e carteira de investimentos",
 };
+
+async function UserNav() {
+  const session = await auth();
+
+  if (session?.user) {
+    return (
+      <div className="flex items-center gap-4">
+        <Link
+          className="text-slate-600 hover:text-blue-600 transition-colors"
+          href="/profile"
+          aria-label="Perfil"
+        >
+          Perfil
+        </Link>
+        <form action={logout}>
+          <button
+            type="submit"
+            className="text-slate-600 hover:text-blue-600 transition-colors"
+          >
+            Sair
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-4">
+      <Link
+        className="text-slate-600 hover:text-blue-600 transition-colors"
+        href="/auth/login"
+      >
+        Entrar
+      </Link>
+      <Link
+        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+        href="/auth/register"
+      >
+        Cadastrar
+      </Link>
+    </div>
+  );
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,7 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/" className="text-2xl font-bold tracking-tight text-blue-600 hover:text-blue-700">
               UpperView
             </Link>
-            <nav className="flex gap-6 text-sm font-medium">
+            <nav className="flex items-center gap-6 text-sm font-medium">
               <Link className="text-slate-600 hover:text-blue-600 transition-colors" href="/" aria-label="Início">
                 Início
               </Link>
@@ -29,6 +74,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link className="text-slate-600 hover:text-blue-600 transition-colors" href="/settings" aria-label="Configurações">
                 Configurações
               </Link>
+              <div className="ml-4 border-l border-slate-300 pl-4">
+                <UserNav />
+              </div>
             </nav>
           </header>
           <main className="py-8">{children}</main>
