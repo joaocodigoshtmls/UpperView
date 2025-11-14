@@ -18,6 +18,13 @@ model User {
   watchlists    Watchlist[]
   accounts      Account[]
   sessions      Session[]
+  financialAccounts FinancialAccount[]
+  transactions  Transaction[]
+  budgets       Budget[]
+  goals         Goal[]
+  positions     Position[]
+  trades        Trade[]
+  alerts        Alert[]
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 }
@@ -127,6 +134,8 @@ model FinancialAccount {
   wallet      Wallet?       @relation(fields: [walletId], references: [id])
   institution Institution?  @relation(fields: [institutionId], references: [id])
   transactions Transaction[]
+  positions   Position[]
+  trades      Trade[]
 
   @@index([userId])
   @@index([institutionId])
@@ -144,6 +153,7 @@ model Category {
 
   user         User          @relation("UserCategories", fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
+  budgetItems  BudgetItem[]
 
   @@unique([userId, name])
 }
@@ -160,7 +170,7 @@ model Transaction {
   occurredAt   DateTime
   cleared      Boolean         @default(true)
   notes        String?
-  tags         String[]        @db.Text[]
+  tags         String[]
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
@@ -225,6 +235,8 @@ model Security {
 
   positions     Position[]
   watchlistItems WatchlistItem[]
+  trades        Trade[]
+  alerts        Alert[]
 
   @@unique([symbol])
 }
