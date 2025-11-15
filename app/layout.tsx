@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { LogoutButton } from "@/components/logout-button";
 import { auth } from "@/auth";
 
 export const metadata: Metadata = {
@@ -25,22 +26,29 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link href="/" className="text-2xl font-bold tracking-tight text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
                 UpperView
               </Link>
-              <nav className="flex gap-6 text-sm font-medium">
+              <nav className="flex gap-6 text-sm font-medium items-center">
                 <Link className="text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 transition-colors" href="/" aria-label="Início">
                   Início
                 </Link>
-                <Link className="text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 transition-colors" href="/dashboard" aria-label="Dashboard">
-                  Dashboard
-                </Link>
-                <Link className="text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 transition-colors" href="/transactions" aria-label="Transações">
-                  Transações
-                </Link>
-                <Link className="text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 transition-colors" href="/settings" aria-label="Configurações">
-                  Configurações
-                </Link>
-                {session && (
-                  <Link className="text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 transition-colors" href="/perfil" aria-label="Perfil">
-                    Perfil
+                {session ? (
+                  <>
+                    <Link className="text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 transition-colors" href="/dashboard" aria-label="Dashboard">
+                      Dashboard
+                    </Link>
+                    <Link className="text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 transition-colors" href="/transactions" aria-label="Transações">
+                      Transações
+                    </Link>
+                    <Link className="text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 transition-colors" href="/settings" aria-label="Configurações">
+                      Configurações
+                    </Link>
+                    <Link className="text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 transition-colors" href="/perfil" aria-label="Perfil">
+                      Perfil
+                    </Link>
+                    <LogoutButton />
+                  </>
+                ) : (
+                  <Link className="text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 transition-colors" href="/login" aria-label="Entrar">
+                    Entrar
                   </Link>
                 )}
               </nav>
