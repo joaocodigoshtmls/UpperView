@@ -28,6 +28,11 @@ export default function AccountForm({ account, institutions }: AccountFormProps)
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  const closeDialog = () => {
+    setIsOpen(false);
+    setError('');
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -41,7 +46,7 @@ export default function AccountForm({ account, institutions }: AccountFormProps)
       } else {
         await createAccount(formData);
       }
-      setIsOpen(false);
+      closeDialog();
       (e.target as HTMLFormElement).reset();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao salvar conta');
@@ -63,17 +68,32 @@ export default function AccountForm({ account, institutions }: AccountFormProps)
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="account-dialog-title"
+    >
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full" role="document">
         <div className="p-6 border-b border-slate-200">
-          <h2 className="text-xl font-semibold text-slate-800">
-            {account ? 'Editar Conta' : 'Nova Conta'}
-          </h2>
+          <div className="flex items-start justify-between gap-3">
+            <h2 id="account-dialog-title" className="text-xl font-semibold text-slate-800">
+              {account ? 'Editar Conta' : 'Nova Conta'}
+            </h2>
+            <button
+              type="button"
+              onClick={closeDialog}
+              className="rounded-md p-1 text-slate-500 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
+              aria-label="Fechar"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm" role="alert" aria-live="assertive">
               {error}
             </div>
           )}
@@ -91,6 +111,7 @@ export default function AccountForm({ account, institutions }: AccountFormProps)
               required
               defaultValue={account?.name}
               placeholder="Ex: Conta Corrente"
+              maxLength={80}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -169,7 +190,7 @@ export default function AccountForm({ account, institutions }: AccountFormProps)
           <div className="flex gap-3 pt-4">
             <button
               type="button"
-              onClick={() => setIsOpen(false)}
+              onClick={closeDialog}
               disabled={isSubmitting}
               className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium disabled:opacity-50"
             >

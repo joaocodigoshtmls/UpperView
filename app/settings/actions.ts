@@ -8,10 +8,10 @@ import { z } from 'zod';
 
 // Account actions
 const accountSchema = z.object({
-  name: z.string().min(1, 'Nome é obrigatório'),
+  name: z.string().trim().min(1, 'Nome é obrigatório').max(80),
   type: z.nativeEnum(AccountType),
   currency: z.nativeEnum(Currency),
-  balance: z.number(),
+  balance: z.preprocess((value) => Number(value), z.number({ invalid_type_error: 'Saldo inválido' })),
   institutionId: z.string().optional(),
 });
 
@@ -19,26 +19,30 @@ export async function createAccount(formData: FormData) {
   const userId = await getUserId();
 
   const data = {
-    name: formData.get('name') as string,
+    name: (formData.get('name') as string) || '',
     type: formData.get('type') as AccountType,
     currency: formData.get('currency') as Currency,
-    balance: parseFloat(formData.get('balance') as string),
+    balance: formData.get('balance'),
     institutionId: (formData.get('institutionId') as string) || null,
   };
 
-  const validated = accountSchema.parse({
+  const validated = accountSchema.safeParse({
     ...data,
     institutionId: data.institutionId || undefined,
   });
 
+  if (!validated.success) {
+    throw new Error(validated.error.errors[0]?.message || 'Dados de conta inválidos');
+  }
+
   await prisma.financialAccount.create({
     data: {
       userId,
-      name: validated.name,
-      type: validated.type,
-      currency: validated.currency,
-      balance: validated.balance,
-      institutionId: validated.institutionId || null,
+      name: validated.data.name,
+      type: validated.data.type,
+      currency: validated.data.currency,
+      balance: validated.data.balance,
+      institutionId: validated.data.institutionId || null,
     },
   });
 
@@ -51,17 +55,21 @@ export async function updateAccount(formData: FormData) {
   const id = formData.get('id') as string;
 
   const data = {
-    name: formData.get('name') as string,
+    name: (formData.get('name') as string) || '',
     type: formData.get('type') as AccountType,
     currency: formData.get('currency') as Currency,
-    balance: parseFloat(formData.get('balance') as string),
+    balance: formData.get('balance'),
     institutionId: (formData.get('institutionId') as string) || null,
   };
 
-  const validated = accountSchema.parse({
+  const validated = accountSchema.safeParse({
     ...data,
     institutionId: data.institutionId || undefined,
   });
+
+  if (!validated.success) {
+    throw new Error(validated.error.errors[0]?.message || 'Dados de conta inválidos');
+  }
 
   // Check ownership
   const account = await prisma.financialAccount.findFirst({
@@ -75,11 +83,11 @@ export async function updateAccount(formData: FormData) {
   await prisma.financialAccount.update({
     where: { id },
     data: {
-      name: validated.name,
-      type: validated.type,
-      currency: validated.currency,
-      balance: validated.balance,
-      institutionId: validated.institutionId || null,
+      name: validated.data.name,
+      type: validated.data.type,
+      currency: validated.data.currency,
+      balance: validated.data.balance,
+      institutionId: validated.data.institutionId || null,
     },
   });
 
@@ -110,28 +118,32 @@ export async function deleteAccount(formData: FormData) {
 
 // Category actions
 const categorySchema = z.object({
-  name: z.string().min(1, 'Nome é obrigatório'),
-  icon: z.string().optional(),
+  name: z.string().trim().min(1, 'Nome é obrigatório').max(60),
+  icon: z.string().trim().max(2).optional(),
 });
 
 export async function createCategory(formData: FormData) {
   const userId = await getUserId();
 
   const data = {
-    name: formData.get('name') as string,
+    name: (formData.get('name') as string) || '',
     icon: (formData.get('icon') as string) || null,
   };
 
-  const validated = categorySchema.parse({
+  const validated = categorySchema.safeParse({
     ...data,
     icon: data.icon || undefined,
   });
 
+  if (!validated.success) {
+    throw new Error(validated.error.errors[0]?.message || 'Dados de categoria inválidos');
+  }
+
   await prisma.category.create({
     data: {
       userId,
-      name: validated.name,
-      icon: validated.icon || null,
+      name: validated.data.name,
+      icon: validated.data.icon || null,
       isDefault: false,
     },
   });
@@ -144,14 +156,18 @@ export async function updateCategory(formData: FormData) {
   const id = formData.get('id') as string;
 
   const data = {
-    name: formData.get('name') as string,
+    name: (formData.get('name') as string) || '',
     icon: (formData.get('icon') as string) || null,
   };
 
-  const validated = categorySchema.parse({
+  const validated = categorySchema.safeParse({
     ...data,
     icon: data.icon || undefined,
   });
+
+  if (!validated.success) {
+    throw new Error(validated.error.errors[0]?.message || 'Dados de categoria inválidos');
+  }
 
   // Check ownership
   const category = await prisma.category.findFirst({
@@ -165,8 +181,8 @@ export async function updateCategory(formData: FormData) {
   await prisma.category.update({
     where: { id },
     data: {
-      name: validated.name,
-      icon: validated.icon || null,
+      name: validated.data.name,
+      icon: validated.data.icon || null,
     },
   });
 

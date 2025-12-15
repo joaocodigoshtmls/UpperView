@@ -27,10 +27,20 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold text-slate-800">Configurações</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Painel de ajuste</p>
+          <h1 className="text-3xl font-bold text-slate-900">Configurações</h1>
+          <p className="text-sm text-slate-600">Gerencie contas, instituições e categorias usadas em transações.</p>
+        </div>
+        <div className="flex gap-3 text-sm font-semibold text-blue-700">
+          <a href="#accounts" className="underline-offset-4 hover:underline">Contas</a>
+          <a href="#categories" className="underline-offset-4 hover:underline">Categorias</a>
+        </div>
+      </div>
 
       {/* Accounts Section */}
-      <section className="bg-white rounded-lg shadow-sm p-6">
+      <section id="accounts" className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-slate-800">Contas Financeiras</h2>
           <AccountForm institutions={institutions} />
@@ -78,7 +88,7 @@ export default async function SettingsPage() {
       </section>
 
       {/* Categories Section */}
-      <section className="bg-white rounded-lg shadow-sm p-6">
+      <section id="categories" className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-slate-800">Categorias</h2>
           <CategoryForm />

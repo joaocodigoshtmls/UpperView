@@ -3,8 +3,14 @@
 @tailwind utilities;
 
 :root {
-  --bg: 255 255 255;
-  --fg: 17 24 39;
+  --bg: 250 250 255;
+  --fg: 15 23 42;
+  color-scheme: light;
+}
+
+* {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 html, body {
@@ -14,4 +20,42 @@ html, body {
 body {
   color: rgb(var(--fg));
   background: rgb(var(--bg));
+}
+
+a.nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0;
+  transition: color 150ms ease, border-color 150ms ease;
+  border-bottom: 2px solid transparent;
+}
+
+a.nav-link:hover,
+a.nav-link:focus-visible {
+  color: rgb(37, 99, 235);
+  border-color: rgb(37, 99, 235);
+  outline: none;
+}
+
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 100;
+  background: #0f172a;
+  color: white;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 30px -12px rgba(15, 23, 42, 0.25);
+}
+
+.skip-link:focus-visible {
+  left: 1rem;
+  top: 1rem;
+  width: auto;
+  height: auto;
 }

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { getUserId } from '@/lib/user';
 import { formatBRL } from '@/lib/format';
@@ -5,18 +6,25 @@ import { TransactionType } from '@prisma/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import TransactionDialog from './transaction-dialog';
+import { z } from 'zod';
 
 export const revalidate = 0;
 
-interface SearchParams {
-  type?: string;
-  search?: string;
-}
+const searchSchema = z.object({
+  type: z.enum(['all', 'INCOME', 'EXPENSE', 'TRANSFER']).default('all'),
+  search: z.string().trim().min(1).optional(),
+  accountId: z.string().trim().min(1).optional(),
+  categoryId: z.string().trim().min(1).optional(),
+  startDate: z.string().trim().min(1).optional(),
+  endDate: z.string().trim().min(1).optional(),
+});
+
+type SearchParams = z.infer<typeof searchSchema>;
 
 async function getTransactions(userId: string, searchParams: SearchParams) {
   const whereClause: any = { userId };
 
-  if (searchParams.type && searchParams.type !== 'all') {
+  if (searchParams.type !== 'all') {
     whereClause.type = searchParams.type as TransactionType;
   }
 
@@ -24,6 +32,21 @@ async function getTransactions(userId: string, searchParams: SearchParams) {
     whereClause.description = {
       contains: searchParams.search,
       mode: 'insensitive',
+    };
+  }
+
+  if (searchParams.accountId) {
+    whereClause.accountId = searchParams.accountId;
+  }
+
+  if (searchParams.categoryId) {
+    whereClause.categoryId = searchParams.categoryId;
+  }
+
+  if (searchParams.startDate || searchParams.endDate) {
+    whereClause.occurredAt = {
+      ...(searchParams.startDate ? { gte: new Date(searchParams.startDate) } : {}),
+      ...(searchParams.endDate ? { lte: new Date(searchParams.endDate) } : {}),
     };
   }
 
@@ -36,7 +59,7 @@ async function getTransactions(userId: string, searchParams: SearchParams) {
     orderBy: {
       occurredAt: 'desc',
     },
-    take: 50,
+    take: 100,
   });
 
   return transactions;
@@ -45,10 +68,10 @@ async function getTransactions(userId: string, searchParams: SearchParams) {
 export default async function TransactionsPage({
   searchParams,
 }: {
-  searchParams: Promise<SearchParams>;
+  searchParams: SearchParams;
 }) {
   const userId = await getUserId();
-  const params = await searchParams;
+  const params = searchSchema.parse(searchParams ?? {});
   const transactions = await getTransactions(userId, params);
 
   const accounts = await prisma.financialAccount.findMany({
@@ -63,45 +86,104 @@ export default async function TransactionsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-slate-800">Transações</h1>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Registros</p>
+          <h1 className="text-3xl font-bold text-slate-900">Transacoes</h1>
+        </div>
         <TransactionDialog accounts={accounts} categories={categories} />
       </div>
 
       {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm p-4">
-        <form method="get" className="flex gap-4">
-          <div className="flex-1">
-            <label htmlFor="search" className="sr-only">Buscar</label>
+        <form method="get" className="grid gap-4 md:grid-cols-4 md:items-end">
+          <div className="md:col-span-2">
+            <label htmlFor="search" className="block text-xs font-semibold text-slate-600 mb-1">Buscar</label>
             <input
               type="text"
               id="search"
               name="search"
-              placeholder="Buscar por descrição..."
+              placeholder="Descrição"
               defaultValue={params.search}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label htmlFor="type" className="sr-only">Tipo</label>
+            <label htmlFor="type" className="block text-xs font-semibold text-slate-600 mb-1">Tipo</label>
             <select
               id="type"
               name="type"
               defaultValue={params.type || 'all'}
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="all">Todos os tipos</option>
+              <option value="all">Todos</option>
               <option value="INCOME">Receitas</option>
               <option value="EXPENSE">Despesas</option>
-              <option value="TRANSFER">Transferências</option>
+              <option value="TRANSFER">Transferencias</option>
             </select>
           </div>
-          <button
-            type="submit"
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-          >
-            Filtrar
-          </button>
+          <div>
+            <label htmlFor="accountId" className="block text-xs font-semibold text-slate-600 mb-1">Conta</label>
+            <select
+              id="accountId"
+              name="accountId"
+              defaultValue={params.accountId || ''}
+              className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Todas</option>
+              {accounts.map((account) => (
+                <option key={account.id} value={account.id}>{account.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="categoryId" className="block text-xs font-semibold text-slate-600 mb-1">Categoria</label>
+            <select
+              id="categoryId"
+              name="categoryId"
+              defaultValue={params.categoryId || ''}
+              className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Todas</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>{category.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="startDate" className="block text-xs font-semibold text-slate-600 mb-1">Data inicial</label>
+            <input
+              type="date"
+              id="startDate"
+              name="startDate"
+              defaultValue={params.startDate}
+              className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="endDate" className="block text-xs font-semibold text-slate-600 mb-1">Data final</label>
+            <input
+              type="date"
+              id="endDate"
+              name="endDate"
+              defaultValue={params.endDate}
+              className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              className="flex-1 rounded-lg bg-blue-600 px-6 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
+            >
+              Aplicar filtros
+            </button>
+            <Link
+              href="/transactions"
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
+            >
+              Limpar
+            </Link>
+          </div>
         </form>
       </div>
 

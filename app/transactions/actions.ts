@@ -7,12 +7,12 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 const transactionSchema = z.object({
-  type: z.nativeEnum(TransactionType),
+  type: z.nativeEnum(TransactionType, { required_error: 'Tipo é obrigatório' }),
   accountId: z.string().min(1, 'Conta é obrigatória'),
   categoryId: z.string().optional(),
-  amount: z.number().positive('Valor deve ser positivo'),
-  occurredAt: z.date(),
-  description: z.string().optional(),
+  amount: z.preprocess((value) => Number(value), z.number().positive('Valor deve ser positivo')), 
+  occurredAt: z.preprocess((value) => new Date(String(value)), z.date({ invalid_type_error: 'Data inválida' })),
+  description: z.string().max(120).optional(),
 });
 
 export async function createTransaction(formData: FormData) {
@@ -22,17 +22,24 @@ export async function createTransaction(formData: FormData) {
     type: formData.get('type') as TransactionType,
     accountId: formData.get('accountId') as string,
     categoryId: (formData.get('categoryId') as string) || null,
-    amount: parseFloat(formData.get('amount') as string),
-    occurredAt: new Date(formData.get('occurredAt') as string),
-    description: (formData.get('description') as string) || null,
+    amount: formData.get('amount'),
+    occurredAt: formData.get('occurredAt'),
+    description: (formData.get('description') as string)?.trim() || null,
   };
 
-  // Validate
-  const validated = transactionSchema.parse({
-    ...data,
-    categoryId: data.categoryId || undefined,
-    description: data.description || undefined,
-  });
+  let validated;
+  try {
+    validated = transactionSchema.parse({
+      ...data,
+      categoryId: data.categoryId || undefined,
+      description: data.description || undefined,
+    });
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      throw new Error(err.errors[0]?.message || 'Dados inválidos');
+    }
+    throw err;
+  }
 
   // Create transaction
   await prisma.transaction.create({
