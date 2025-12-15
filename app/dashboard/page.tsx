@@ -1,78 +1,80 @@
 import Link from 'next/link';
+import { TransactionType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getUserId } from '@/lib/user';
 import { startOfMonth, endOfMonth } from '@/lib/date';
 import { formatBRL } from '@/lib/format';
-import { TransactionType } from '@prisma/client';
 import ExpenseChart from './expense-chart';
 
 export const revalidate = 0;
 
 async function getDashboardData(userId: string) {
-  const now = new Date();
-  const monthStart = startOfMonth(now);
-  const monthEnd = endOfMonth(now);
+  try {
+    const now = new Date();
+    const monthStart = startOfMonth(now);
+    const monthEnd = endOfMonth(now);
 
-  // Get transactions for current month
-  const transactions = await prisma.transaction.findMany({
-    where: {
-      userId,
-      occurredAt: {
-        gte: monthStart,
-        lte: monthEnd,
+    const transactions = await prisma.transaction.findMany({
+      where: {
+        userId,
+        occurredAt: {
+          gte: monthStart,
+          lte: monthEnd,
+        },
       },
-    },
-    include: {
-      category: true,
-    },
-  });
+      include: {
+        category: true,
+      },
+    });
 
-  // Calculate income, expenses, result
-  const income = transactions
-    .filter((t) => t.type === TransactionType.INCOME)
-    .reduce((sum, t) => sum + Number(t.amount), 0);
+    const income = transactions
+      .filter((t) => t.type === TransactionType.INCOME)
+      .reduce((sum, t) => sum + Number(t.amount), 0);
 
-  const expenses = transactions
-    .filter((t) => t.type === TransactionType.EXPENSE)
-    .reduce((sum, t) => sum + Number(t.amount), 0);
+    const expenses = transactions
+      .filter((t) => t.type === TransactionType.EXPENSE)
+      .reduce((sum, t) => sum + Number(t.amount), 0);
 
-  const result = income - expenses;
+    const result = income - expenses;
 
-  // Group expenses by category
-  const expensesByCategory = transactions
-    .filter((t) => t.type === TransactionType.EXPENSE && t.category)
-    .reduce((acc, t) => {
-      const categoryName = t.category?.name || 'Sem categoria';
-      if (!acc[categoryName]) {
-        acc[categoryName] = 0;
-      }
-      acc[categoryName] += Number(t.amount);
-      return acc;
-    }, {} as Record<string, number>);
+    const expensesByCategory = transactions
+      .filter((t) => t.type === TransactionType.EXPENSE && t.category)
+      .reduce((acc, t) => {
+        const categoryName = t.category?.name || 'Sem categoria';
+        acc[categoryName] = (acc[categoryName] || 0) + Number(t.amount);
+        return acc;
+      }, {} as Record<string, number>);
 
-  // Get top 6 categories
-  const topCategories = Object.entries(expensesByCategory)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 6)
-    .map(([name, value]) => ({ name, value }));
+    const topCategories = Object.entries(expensesByCategory)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 6)
+      .map(([name, value]) => ({ name, value }));
 
-  // Get accounts
-  const accounts = await prisma.financialAccount.findMany({
-    where: { userId, archived: false },
-    include: {
-      institution: true,
-    },
-    orderBy: { name: 'asc' },
-  });
+    const accounts = await prisma.financialAccount.findMany({
+      where: { userId, archived: false },
+      include: { institution: true },
+      orderBy: { name: 'asc' },
+    });
 
-  return {
-    income,
-    expenses,
-    result,
-    topCategories,
-    accounts,
-    hasTransactions: transactions.length > 0,
-  };
+    return {
+      income,
+      expenses,
+      result,
+      topCategories,
+      accounts,
+      hasTransactions: transactions.length > 0,
+    };
+  } catch (err) {
+    console.error('Erro ao buscar dados do dashboard', err);
+    return {
+      income: 0,
+      expenses: 0,
+      result: 0,
+      topCategories: [],
+      accounts: [],
+      hasTransactions: false,
+    };
+  }
 }
 
 export default async function DashboardPage() {

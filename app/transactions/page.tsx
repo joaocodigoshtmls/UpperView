@@ -9,17 +9,35 @@ import TransactionDialog from './transaction-dialog';
 import { z } from 'zod';
 
 export const revalidate = 0;
+type RawSearchParams = Record<string, string | string[] | undefined>;
+
+const pickFirst = (value: unknown): string | undefined => {
+  if (Array.isArray(value)) {
+    const first = value[0];
+    return typeof first === 'string' ? first : undefined;
+  }
+
+  return typeof value === 'string' ? value : undefined;
+};
 
 const searchSchema = z.object({
-  type: z.enum(['all', 'INCOME', 'EXPENSE', 'TRANSFER']).default('all'),
-  search: z.string().trim().min(1).optional(),
-  accountId: z.string().trim().min(1).optional(),
-  categoryId: z.string().trim().min(1).optional(),
-  startDate: z.string().trim().min(1).optional(),
-  endDate: z.string().trim().min(1).optional(),
+  type: z
+    .preprocess((v) => pickFirst(v) ?? 'all', z.enum(['all', 'INCOME', 'EXPENSE', 'TRANSFER']))
+    .default('all'),
+  search: z.preprocess((v) => pickFirst(v), z.string().trim().min(1).optional()),
+  accountId: z.preprocess((v) => pickFirst(v), z.string().trim().min(1).optional()),
+  categoryId: z.preprocess((v) => pickFirst(v), z.string().trim().min(1).optional()),
+  startDate: z.preprocess((v) => pickFirst(v), z.string().trim().min(1).optional()),
+  endDate: z.preprocess((v) => pickFirst(v), z.string().trim().min(1).optional()),
 });
 
 type SearchParams = z.infer<typeof searchSchema>;
+
+const toValidDate = (value?: string) => {
+  if (!value) return undefined;
+  const dt = new Date(value);
+  return Number.isNaN(dt.getTime()) ? undefined : dt;
+};
 
 async function getTransactions(userId: string, searchParams: SearchParams) {
   const whereClause: any = { userId };
@@ -43,10 +61,13 @@ async function getTransactions(userId: string, searchParams: SearchParams) {
     whereClause.categoryId = searchParams.categoryId;
   }
 
-  if (searchParams.startDate || searchParams.endDate) {
+  const start = toValidDate(searchParams.startDate);
+  const end = toValidDate(searchParams.endDate);
+
+  if (start || end) {
     whereClause.occurredAt = {
-      ...(searchParams.startDate ? { gte: new Date(searchParams.startDate) } : {}),
-      ...(searchParams.endDate ? { lte: new Date(searchParams.endDate) } : {}),
+      ...(start ? { gte: start } : {}),
+      ...(end ? { lte: end } : {}),
     };
   }
 
@@ -68,10 +89,11 @@ async function getTransactions(userId: string, searchParams: SearchParams) {
 export default async function TransactionsPage({
   searchParams,
 }: {
-  searchParams: SearchParams;
+  searchParams?: Promise<RawSearchParams>;
 }) {
   const userId = await getUserId();
-  const params = searchSchema.parse(searchParams ?? {});
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const params = searchSchema.parse(resolvedSearchParams);
   const transactions = await getTransactions(userId, params);
 
   const accounts = await prisma.financialAccount.findMany({
